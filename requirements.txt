@@ -1,0 +1,12 @@
+pandas
+argparse
+kafka
+pyspark
+pymongo
+nltk
+flask
+jinja2
+werkzeug
+itsdangerous
+click
+markupsafe
