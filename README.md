@@ -1,64 +1,79 @@
-amazon-reviews-sentiment/
-├── docker-compose.yml              # Main Docker Compose file for all services
-├── README.md                       # Project documentation
-├── .gitignore                      # Git ignore file
-├── requirements.txt                # Python dependencies
-├── notebooks/                      # Jupyter notebooks for exploration and model development
-│   ├── 01_data_exploration.ipynb   # Initial data exploration
-│   ├── 02_data_preprocessing.ipynb # Text preprocessing and feature engineering
-│   ├── 03_model_training.ipynb     # ML model training and evaluation
-│   └── 04_model_testing.ipynb      # Final model testing
-│
-├── data/                           # Data directory
-│   ├── raw/                        # Raw data files
-│   │   └── data.json               # Amazon reviews dataset
-│   ├── processed/                  # Processed data
-│   │   ├── train_data.parquet      # Training dataset
-│   │   ├── val_data.parquet        # Validation dataset
-│   │   └── test_data.parquet       # Test dataset
-│   └── models/                     # Trained models and vectorizers
-│       ├── tfidf_vectorizer.pkl    # TF-IDF vectorizer
-│       └── sentiment_model.pkl     # Best trained model
-│
-├── kafka_producer/                 # Kafka producer for streaming reviews
-│   ├── Dockerfile                  # Docker configuration for producer
-│   ├── requirements.txt            # Producer-specific dependencies
-│   └── producer.py                 # Producer script
-│
-├── spark_streaming/                # Spark streaming application
-│   ├── Dockerfile                  # Docker configuration for Spark app
-│   ├── requirements.txt            # Spark-specific dependencies
-│   ├── streaming_app.py            # Main Spark streaming application
-│   └── utils/                      # Utility functions
-│       ├── __init__.py             # Package initialization
-│       ├── preprocessing.py        # Text preprocessing utilities
-│       └── mongo_utils.py          # MongoDB connection utilities
-│
-├── web_dashboard/                  # Web dashboard application
-│   ├── Dockerfile                  # Docker configuration for web app
-│   ├── requirements.txt            # Web app dependencies
-│   ├── app.py                      # Flask application
-│   ├── static/                     # Static files
-│   │   ├── css/                    # CSS stylesheets
-│   │   │   └── styles.css          # Custom styles
-│   │   └── js/                     # JavaScript files
-│   │       ├── dashboard.js        # Dashboard functionality
-│   │       └── charts.js           # Chart configurations
-│   ├── templates/                  # HTML templates
-│   │   ├── base.html               # Base template
-│   │   ├── index.html              # Main dashboard
-│   │   ├── online.html             # Online prediction view
-│   │   └── offline.html            # Offline analysis view
-│   └── utils/                      # Web app utilities
-│       ├── __init__.py             # Package initialization
-│       └── db_utils.py             # Database utilities
-│
-├── scripts/                        # Helper scripts
-│   ├── setup_env.sh                # Environment setup script
-│   ├── init_mongodb.py             # MongoDB initialization
-│   └── data_generator.py           # Test data generation
-│
-└── config/                         # Configuration files
-    ├── spark_config.conf           # Spark configuration
-    ├── kafka_config.conf           # Kafka configuration
-    └── app_config.yml              # Application configuration
+# Amazon Reviews Sentiment Analysis
+
+This project provides a real-time sentiment analysis pipeline for Amazon product reviews using Apache Kafka, Apache Spark Streaming, and MongoDB. It streams Amazon review data to Kafka, processes and predicts sentiment with Spark, and stores the results in MongoDB for further analysis or visualization.
+
+## Features
+
+\- Streams Amazon review data to a Kafka topic.  
+\- Consumes reviews from Kafka using Spark Structured Streaming.  
+\- Predicts sentiment using a pre-trained machine learning model.  
+\- Stores enriched review data with sentiment in MongoDB.
+
+## Project Structure
+
+\- `kafka_producer/`: Scripts to stream review data to Kafka.  
+\- `spark_streaming/`: Spark Streaming application for sentiment analysis.  
+\- `models/`: Pre-trained sentiment model and vectorizer.  
+\- `utils/`: Preprocessing and MongoDB utility functions.
+
+## Prerequisites
+
+\- Docker & Docker Compose  
+\- Python 3.8+  
+\- Apache Kafka  
+\- Apache Spark  
+\- MongoDB
+
+## Quick Start
+
+### Run with Docker Compose
+
+1. **Clone the repository:**
+   ```sh
+   git clone https://github.com/Youssefzrr/amazon-reviews-sentiment.git
+   cd amazon-reviews-sentiment
+
+2. **Build and start the services:**
+   ```sh
+   docker-compose up -d
+    ```
+3. **Run the Kafka producer:**
+4. ```sh
+   cd kafka_producer
+   python producer.py
+   ```
+5. **Run the Spark Streaming application:**
+   ```sh
+    cd spark_streaming
+    spark-submit --master local[2] --packages org.mongodb.spark:mongo-spark-connector_2.12:3.0.1 streaming_app.py
+    ```
+6. **Check MongoDB for results:**
+7. ```sh
+   docker exec -it mongodb mongo
+   use reviews_db
+   db.reviews.find().pretty()
+   ```
+8. **Stop the services:**
+   ```sh
+    docker-compose down
+    ```
+## Configuration
+- **Kafka Configuration:** Modify `kafka_producer/config.py` to set the Kafka broker address and topic name.
+- **MongoDB Configuration:** Modify `spark_streaming/config.py` to set the MongoDB connection string and database/collection names.
+- **Model Configuration:** Ensure the pre-trained model and vectorizer are correctly specified in `models/model.py`.
+- **Review Data:** The producer script generates random reviews. You can modify the `kafka_producer/producer.py` script to customize the review data or use a different source.
+- **Spark Configuration:** Adjust the Spark configuration in `spark_streaming/streaming_app.py` as needed for your environment.
+- **Docker Configuration:** The `docker-compose.yml` file sets up Kafka, Zookeeper, and MongoDB. You can modify the configuration to suit your environment or add additional services as needed.
+- **Dependencies:** Ensure all required Python packages are installed. You can use `pip install -r requirements.txt` to install the necessary packages.
+- **Environment Variables:** If you want to use environment variables for configuration, you can set them in your shell or use a `.env` file with the `dotenv` package. Modify the code to read from environment variables as needed.
+- **Logging:** The Spark application uses the `logging` module for logging. You can adjust the logging level and format in `spark_streaming/streaming_app.py`.
+- **Error Handling:** The Spark application includes basic error handling. You can enhance it by adding more specific error handling for different scenarios, such as connection errors or data processing errors.
+- **Testing:** You can add unit tests for the producer and Spark application to ensure the functionality works as expected. Use a testing framework like `unittest` or `pytest` for this purpose.
+- **Documentation:** Consider adding more detailed documentation for each component of the project, including usage examples, configuration options, and troubleshooting tips. This will help users understand how to set up and use the project effectively.
+- **Performance Tuning:** Depending on the volume of data and the complexity of the model, you may need to tune the performance of the Spark application. This can include adjusting the number of partitions, memory settings, and other Spark configurations.
+- **Security:** If you plan to deploy this application in a production environment, consider implementing security measures such as authentication and encryption for Kafka and MongoDB connections. You can use SSL/TLS for secure communication and authentication mechanisms provided by Kafka and MongoDB.
+- **Monitoring:** Set up monitoring for Kafka, Spark, and MongoDB to track performance and resource usage. You can use tools like Prometheus and Grafana for monitoring and alerting.
+- **Scaling:** If you need to handle a large volume of data, consider deploying Kafka and Spark in a distributed environment. You can use Kubernetes or Docker Swarm for orchestration and scaling.
+- **Deployment:** For production deployment, consider using a CI/CD pipeline to automate the build and deployment process. You can use tools like GitHub Actions, Jenkins, or GitLab CI/CD for this purpose.
+- **License:** This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- **Contributing:** Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
