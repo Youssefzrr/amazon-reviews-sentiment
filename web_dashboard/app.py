@@ -43,8 +43,10 @@ def real_time_predictions():
     db = client['amazon_reviews']
     collection = db['predictions']
 
-    # Get the latest 10 predictions
-    latest_predictions = list(collection.find().sort('processing_timestamp', -1).limit(10))
+    # Get the latest predictions with is_realtime flag
+    latest_predictions = list(collection.find(
+        {'is_realtime': True}
+    ).sort('processed_timestamp', -1).limit(10))
 
     # Convert ObjectId to string for JSON serialization
     for pred in latest_predictions:
@@ -52,6 +54,26 @@ def real_time_predictions():
 
     client.close()
     return jsonify(latest_predictions)
+
+
+@app.route('/api/offline-predictions')
+def offline_predictions():
+    """Get predictions for offline analysis."""
+    client = get_mongo_client()
+    db = client['amazon_reviews']
+    collection = db['predictions']
+
+    # Get predictions without real-time flag
+    offline_predictions = list(collection.find(
+        {'is_realtime': {'$ne': True}}
+    ).sort('processed_timestamp', -1))
+
+    # Convert ObjectId to string for JSON serialization
+    for pred in offline_predictions:
+        pred['_id'] = str(pred['_id'])
+
+    client.close()
+    return jsonify(offline_predictions)
 
 
 @app.route('/api/sentiment-distribution')

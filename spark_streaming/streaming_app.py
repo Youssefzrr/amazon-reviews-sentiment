@@ -71,7 +71,7 @@ class ReviewProcessor:
         # Convert to lowercase
         text = text.lower()
         
-        # Remove special characters and digits
+        # Remove special characters and digits - match your notebook preprocessing
         text = re.sub(r'[^a-zA-Z\s]', '', text)
         
         # Tokenize
@@ -88,18 +88,23 @@ class ReviewProcessor:
         try:
             # Preprocess the text
             processed_text = self.preprocess_text(text)
+            logger.info(f"Preprocessed text: {processed_text[:100]}...")  # Log first 100 chars
             
             # Create a DataFrame with the processed text
-            text_df = spark.createDataFrame([(processed_text,)], ["text"])
+            text_df = spark.createDataFrame([(processed_text,)], ["reviewText"])
+            logger.info(f"Created DataFrame with schema: {text_df.schema}")
             
             # Apply TF-IDF transformation
             tfidf_features = self.tfidf_model.transform(text_df)
+            logger.info("Applied TF-IDF transformation")
             
             # Predict sentiment
             prediction = self.sentiment_model.transform(tfidf_features)
+            logger.info("Applied sentiment model")
             
             # Extract prediction and probability
             result = prediction.select("prediction", "probability").first()
+            logger.info(f"Prediction result: {result}")
             
             return {
                 'sentiment': int(result.prediction),
@@ -107,6 +112,7 @@ class ReviewProcessor:
             }
         except Exception as e:
             logger.error(f"Error in sentiment prediction: {e}")
+            logger.error(f"Input text: {text[:100]}...")  # Log first 100 chars of input
             return {'sentiment': -1, 'confidence': 0.0}
 
     def store_in_mongodb(self, review_data, prediction):
@@ -116,13 +122,14 @@ class ReviewProcessor:
                 'review_id': review_data.get('review_id', ''),
                 'product_id': review_data.get('product_id', ''),
                 'user_id': review_data.get('user_id', ''),
-                'review_text': review_data.get('review_text', ''),
+                'review_text': review_data.get('reviewText', ''),  # Changed to match input
                 'review_title': review_data.get('review_title', ''),
                 'review_date': review_data.get('review_date', ''),
                 'kafka_timestamp': review_data.get('kafka_timestamp', ''),
                 'processed_timestamp': datetime.now().isoformat(),
                 'sentiment': prediction['sentiment'],
-                'confidence': prediction['confidence']
+                'confidence': prediction['confidence'],
+                'is_realtime': True
             }
             
             self.db.predictions.insert_one(document)
@@ -147,12 +154,12 @@ def main():
         # Connect to MongoDB
         processor.connect_mongodb()
         
-        # Define schema for Kafka messages
+        # Define schema for Kafka messages - match your producer's output
         schema = StructType([
             StructField("review_id", StringType()),
             StructField("product_id", StringType()),
             StructField("user_id", StringType()),
-            StructField("review_text", StringType()),
+            StructField("reviewText", StringType()),  # Changed to match your notebook
             StructField("review_title", StringType()),
             StructField("review_date", StringType()),
             StructField("kafka_timestamp", StringType())
@@ -176,16 +183,33 @@ def main():
             # Convert to pandas for processing
             pandas_df = batch_df.toPandas()
             
+            # Debug: Print the first row to see the structure
+            if not pandas_df.empty:
+                logger.info(f"First row structure: {pandas_df.iloc[0].to_dict()}")
+            
             # Process each review
             for _, row in pandas_df.iterrows():
                 review_data = row.to_dict()
-                prediction = processor.predict_sentiment(spark, review_data['review_text'])
-                processor.store_in_mongodb(review_data, prediction)
+                logger.info(f"Processing review data: {review_data}")  # Debug log
+                
+                try:
+                    # Try to get the review text with different possible field names
+                    review_text = review_data.get('reviewText') or review_data.get('review_text') or review_data.get('text')
+                    if review_text is None:
+                        logger.error(f"Review text not found. Available fields: {list(review_data.keys())}")
+                        continue
+                        
+                    prediction = processor.predict_sentiment(spark, review_text)
+                    processor.store_in_mongodb(review_data, prediction)
+                except Exception as e:
+                    logger.error(f"Error processing review: {e}")
+                    logger.error(f"Review data: {review_data}")
         
-        # Start the streaming query
+        # Start the streaming query with checkpoint location
         query = parsed_df.writeStream \
             .foreachBatch(process_batch) \
             .outputMode("append") \
+            .option("checkpointLocation", "/app/checkpoints") \
             .start()
         
         # Wait for the streaming to finish

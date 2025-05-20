@@ -83,11 +83,12 @@ def send_reviews_to_kafka(producer, df, topic_name, batch_size=100, delay=0.1):
         batch = df.iloc[i:i+batch_size]
         
         for _, row in batch.iterrows():
-            # Convert row to dictionary and handle numpy types
-            record = convert_numpy_types(row.to_dict())
-            
-            # Add timestamp of when the record is being sent
+            record = row.to_dict()
+            # Add timestamp
             record['kafka_timestamp'] = datetime.now().isoformat()
+            
+            # Debug: Print the record structure
+            print(f"Sending record: {record}")
             
             try:
                 producer.send(topic_name, value=record)
