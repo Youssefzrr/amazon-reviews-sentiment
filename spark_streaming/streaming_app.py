@@ -88,7 +88,7 @@ class ReviewProcessor:
         try:
             # Preprocess the text
             processed_text = self.preprocess_text(text)
-            logger.info(f"Preprocessed text: {processed_text[:100]}...")  # Log first 100 chars
+            logger.info(f"Preprocessed text: {processed_text[:100]}...")
             
             # Create a DataFrame with the processed text
             text_df = spark.createDataFrame([(processed_text,)], ["reviewText"])
@@ -96,10 +96,27 @@ class ReviewProcessor:
             
             # Apply TF-IDF transformation
             tfidf_features = self.tfidf_model.transform(text_df)
+            
+            # Drop all intermediate columns that might cause conflicts
+            columns_to_drop = ["words", "rawFeatures", "filtered_words", "features", "rawPrediction", "raw_features"]
+            for col in columns_to_drop:
+                if col in tfidf_features.columns:
+                    tfidf_features = tfidf_features.drop(col)
+            
             logger.info("Applied TF-IDF transformation")
+            
+            # Select only the features column for prediction
+            if "features" in tfidf_features.columns:
+                tfidf_features = tfidf_features.select("features")
             
             # Predict sentiment
             prediction = self.sentiment_model.transform(tfidf_features)
+            
+            # Drop any additional columns that might have been created
+            for col in columns_to_drop:
+                if col in prediction.columns:
+                    prediction = prediction.drop(col)
+                
             logger.info("Applied sentiment model")
             
             # Extract prediction and probability
@@ -112,17 +129,26 @@ class ReviewProcessor:
             }
         except Exception as e:
             logger.error(f"Error in sentiment prediction: {e}")
-            logger.error(f"Input text: {text[:100]}...")  # Log first 100 chars of input
+            logger.error(f"Input text: {text[:100]}...")
+            # Add more detailed error logging
+            if 'tfidf_features' in locals():
+                logger.error(f"Available columns after TF-IDF: {tfidf_features.columns}")
+            if 'prediction' in locals():
+                logger.error(f"Available columns after prediction: {prediction.columns}")
             return {'sentiment': -1, 'confidence': 0.0}
 
     def store_in_mongodb(self, review_data, prediction):
         """Store the review and prediction in MongoDB."""
         try:
+            # Clear the predictions collection before inserting new data
+            self.db.predictions.delete_many({})
+            logger.info("Cleared existing predictions from MongoDB")
+            
             document = {
                 'review_id': review_data.get('review_id', ''),
                 'product_id': review_data.get('product_id', ''),
                 'user_id': review_data.get('user_id', ''),
-                'review_text': review_data.get('reviewText', ''),  # Changed to match input
+                'review_text': review_data.get('reviewText', ''),
                 'review_title': review_data.get('review_title', ''),
                 'review_date': review_data.get('review_date', ''),
                 'kafka_timestamp': review_data.get('kafka_timestamp', ''),
