@@ -45,8 +45,8 @@ class ReviewProcessor:
             # Load the sentiment model
             self.sentiment_model = PipelineModel.load(MODEL_PATH)
             
-            # Load the TF-IDF model
-            self.tfidf_model = PipelineModel.load('/models/tfidf_model')
+            # Update TF-IDF model path to match the same directory as sentiment model
+            self.tfidf_model = PipelineModel.load('/app/data/models/tfidf_model')
             
             logger.info("Successfully loaded Spark MLlib models")
         except Exception as e:
