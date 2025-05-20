@@ -1,163 +1,196 @@
-#!/usr/bin/env python3
-"""
-Spark Streaming Application for Amazon Reviews Sentiment Analysis
-This script consumes Amazon reviews from Kafka, predicts sentiment, and stores results in MongoDB.
-"""
-
-import os
-import sys
-import json
-import pickle
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, udf, to_timestamp, current_timestamp
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, ArrayType, IntegerType, TimestampType
+from pyspark.sql.functions import from_json, col, udf
+from pyspark.sql.types import StructType, StructField, StringType, FloatType, TimestampType
+from pyspark.ml import PipelineModel
+import logging
+from datetime import datetime
+import os
+import joblib
 from pymongo import MongoClient
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "utils"))
-from preprocessing import preprocess_text
-from mongo_utils import write_to_mongodb
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-# Define schema for Amazon reviews
-review_schema = StructType([
-    StructField("reviewerID", StringType()),
-    StructField("asin", StringType()),
-    StructField("reviewerName", StringType()),
-    StructField("helpful", ArrayType(IntegerType())),
-    StructField("reviewText", StringType()),
-    StructField("overall", FloatType()),
-    StructField("summary", StringType()),
-    StructField("unixReviewTime", IntegerType()),
-    StructField("reviewTime", StringType()),
-    StructField("stream_timestamp", StringType())
-])
+# Download required NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
 
-
-def load_model_and_vectorizer():
-    """Load the trained sentiment model and vectorizer."""
-    model_path = "/app/models/sentiment_model.pkl"
-    vectorizer_path = "/app/models/tfidf_vectorizer.pkl"
-
-    with open(model_path, 'rb') as f:
-        model = pickle.load(f)
-
-    with open(vectorizer_path, 'rb') as f:
-        vectorizer = pickle.load(f)
-
-    return model, vectorizer
-
-
-def create_sentiment_udf(model, vectorizer):
-    """Create UDF for sentiment prediction."""
-
-    def predict_sentiment(review_text, overall):
+class ReviewProcessor:
+    def __init__(self):
+        self.stop_words = set(stopwords.words('english'))
+        self.lemmatizer = WordNetLemmatizer()
+        self.sentiment_model = None
+        self.tfidf_model = None
+        self.mongo_client = None
+        self.db = None
+        
+    def load_models(self, spark):
+        """Load the Spark MLlib models."""
         try:
-            # Skip prediction if no text
-            if not review_text or len(review_text.strip()) == 0:
-                # Determine sentiment based on overall rating
-                if overall < 3:
-                    return "negative"
-                elif overall == 3:
-                    return "neutral"
-                else:
-                    return "positive"
-
-            # Preprocess text
-            processed_text = preprocess_text(review_text)
-
-            # Vectorize
-            vectorized = vectorizer.transform([processed_text])
-
-            # Predict
-            prediction = model.predict(vectorized)[0]
-
-            return prediction
+            # Load the sentiment model
+            self.sentiment_model = PipelineModel.load('/models/sentiment_model')
+            
+            # Load the TF-IDF model
+            self.tfidf_model = PipelineModel.load('/models/tfidf_model')
+            
+            logger.info("Successfully loaded Spark MLlib models")
         except Exception as e:
-            print(f"Error in prediction: {e}")
-            # Fallback to rating-based sentiment
-            if overall < 3:
-                return "negative"
-            elif overall == 3:
-                return "neutral"
-            else:
-                return "positive"
+            logger.error(f"Failed to load models: {e}")
+            raise
 
-    return udf(predict_sentiment, StringType())
+    def connect_mongodb(self):
+        """Connect to MongoDB."""
+        try:
+            self.mongo_client = MongoClient('mongodb://mongodb:27017/')
+            self.db = self.mongo_client['amazon_reviews']
+            logger.info("Successfully connected to MongoDB")
+        except Exception as e:
+            logger.error(f"Failed to connect to MongoDB: {e}")
+            raise
 
+    def preprocess_text(self, text):
+        """Apply the same preprocessing steps used during training."""
+        if not isinstance(text, str):
+            return ""
+        
+        # Convert to lowercase
+        text = text.lower()
+        
+        # Remove special characters and digits
+        text = re.sub(r'[^a-zA-Z\s]', '', text)
+        
+        # Tokenize
+        tokens = nltk.word_tokenize(text)
+        
+        # Remove stopwords and lemmatize
+        tokens = [self.lemmatizer.lemmatize(token) for token in tokens 
+                 if token not in self.stop_words]
+        
+        return ' '.join(tokens)
 
-def create_spark_session():
-    """Create and configure Spark session."""
-    return SparkSession.builder \
-        .appName("AmazonReviewsSentimentAnalysis") \
-        .config("spark.jars.packages",
-                "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2,"
-                "org.mongodb.spark:mongo-spark-connector_2.12:3.0.1") \
-        .getOrCreate()
+    def predict_sentiment(self, spark, text):
+        """Predict sentiment using Spark MLlib models."""
+        try:
+            # Preprocess the text
+            processed_text = self.preprocess_text(text)
+            
+            # Create a DataFrame with the processed text
+            text_df = spark.createDataFrame([(processed_text,)], ["text"])
+            
+            # Apply TF-IDF transformation
+            tfidf_features = self.tfidf_model.transform(text_df)
+            
+            # Predict sentiment
+            prediction = self.sentiment_model.transform(tfidf_features)
+            
+            # Extract prediction and probability
+            result = prediction.select("prediction", "probability").first()
+            
+            return {
+                'sentiment': int(result.prediction),
+                'confidence': float(max(result.probability))
+            }
+        except Exception as e:
+            logger.error(f"Error in sentiment prediction: {e}")
+            return {'sentiment': -1, 'confidence': 0.0}
 
+    def store_in_mongodb(self, review_data, prediction):
+        """Store the review and prediction in MongoDB."""
+        try:
+            document = {
+                'review_id': review_data.get('review_id', ''),
+                'product_id': review_data.get('product_id', ''),
+                'user_id': review_data.get('user_id', ''),
+                'review_text': review_data.get('review_text', ''),
+                'review_title': review_data.get('review_title', ''),
+                'review_date': review_data.get('review_date', ''),
+                'kafka_timestamp': review_data.get('kafka_timestamp', ''),
+                'processed_timestamp': datetime.now().isoformat(),
+                'sentiment': prediction['sentiment'],
+                'confidence': prediction['confidence']
+            }
+            
+            self.db.predictions.insert_one(document)
+            logger.info(f"Stored review {document['review_id']} in MongoDB")
+        except Exception as e:
+            logger.error(f"Failed to store in MongoDB: {e}")
 
 def main():
-    """Main function for the Spark streaming application."""
-    # Create Spark session
-    spark = create_spark_session()
-    spark.sparkContext.setLogLevel("WARN")
-
-    print("Loading sentiment model and vectorizer...")
-    model, vectorizer = load_model_and_vectorizer()
-
-    # Create UDF for sentiment prediction
-    sentiment_udf = create_sentiment_udf(model, vectorizer)
-
-    print("Reading from Kafka...")
-    # Read from Kafka
-    kafka_df = spark \
-        .readStream \
-        .format("kafka") \
-        .option("kafka.bootstrap.servers", "kafka:9092") \
-        .option("subscribe", "amazon-reviews") \
-        .option("startingOffsets", "latest") \
-        .load()
-
-    # Parse JSON and apply schema
-    parsed_df = kafka_df \
-        .selectExpr("CAST(value AS STRING)") \
-        .select(from_json(col("value"), review_schema).alias("data")) \
-        .select("data.*")
-
-    # Add processing timestamp
-    df_with_timestamp = parsed_df \
-        .withColumn("processing_timestamp", current_timestamp())
-
-    # Apply sentiment prediction
-    result_df = df_with_timestamp \
-        .withColumn("sentiment", sentiment_udf(col("reviewText"), col("overall")))
-
-    # Select relevant columns for output
-    output_df = result_df.select(
-        "reviewerID", "asin", "reviewerName", "helpful", "reviewText",
-        "overall", "summary", "unixReviewTime", "reviewTime",
-        "stream_timestamp", "processing_timestamp", "sentiment"
-    )
-
-    print("Starting stream processing...")
-
-    # Write to MongoDB
-    mongo_query = output_df \
-        .writeStream \
-        .foreachBatch(write_to_mongodb) \
-        .outputMode("append") \
-        .option("checkpointLocation", "/tmp/checkpoint") \
-        .start()
-
-    # Stream to console for debugging
-    console_query = output_df \
-        .writeStream \
-        .outputMode("append") \
-        .format("console") \
-        .option("truncate", False) \
-        .start()
-
-    # Wait for termination
-    spark.streams.awaitAnyTermination()
-
+    # Initialize Spark Session
+    spark = SparkSession.builder \
+        .appName("AmazonReviewsSentimentAnalysis") \
+        .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.0") \
+        .getOrCreate()
+    
+    # Initialize processor
+    processor = ReviewProcessor()
+    
+    try:
+        # Load models
+        processor.load_models(spark)
+        
+        # Connect to MongoDB
+        processor.connect_mongodb()
+        
+        # Define schema for Kafka messages
+        schema = StructType([
+            StructField("review_id", StringType()),
+            StructField("product_id", StringType()),
+            StructField("user_id", StringType()),
+            StructField("review_text", StringType()),
+            StructField("review_title", StringType()),
+            StructField("review_date", StringType()),
+            StructField("kafka_timestamp", StringType())
+        ])
+        
+        # Read from Kafka
+        df = spark.readStream \
+            .format("kafka") \
+            .option("kafka.bootstrap.servers", "kafka:9092") \
+            .option("subscribe", "amazon-reviews") \
+            .option("startingOffsets", "latest") \
+            .load()
+        
+        # Parse JSON from Kafka
+        parsed_df = df.select(
+            from_json(col("value").cast("string"), schema).alias("data")
+        ).select("data.*")
+        
+        # Process the stream
+        def process_batch(batch_df, batch_id):
+            # Convert to pandas for processing
+            pandas_df = batch_df.toPandas()
+            
+            # Process each review
+            for _, row in pandas_df.iterrows():
+                review_data = row.to_dict()
+                prediction = processor.predict_sentiment(spark, review_data['review_text'])
+                processor.store_in_mongodb(review_data, prediction)
+        
+        # Start the streaming query
+        query = parsed_df.writeStream \
+            .foreachBatch(process_batch) \
+            .outputMode("append") \
+            .start()
+        
+        # Wait for the streaming to finish
+        query.awaitTermination()
+        
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+    finally:
+        if 'processor' in locals() and processor.mongo_client:
+            processor.mongo_client.close()
+        spark.stop()
 
 if __name__ == "__main__":
     main()

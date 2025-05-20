@@ -1,92 +1,110 @@
-#!/usr/bin/env python3
-"""
-Kafka Producer for Amazon Reviews Data
-This script reads Amazon reviews data and sends it to a Kafka topic.
-"""
-
+from kafka import KafkaProducer
+import pandas as pd
 import json
 import time
-import pandas as pd
-import argparse
-from kafka import KafkaProducer
+import logging
 from datetime import datetime
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-def parse_arguments():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='Kafka Producer for Amazon Reviews')
-    parser.add_argument('--data-path', type=str, default='/data/raw/data.json',
-                        help='Path to the Amazon reviews data file')
-    parser.add_argument('--bootstrap-servers', type=str, default='kafka:9092',
-                        help='Kafka bootstrap servers')
-    parser.add_argument('--topic', type=str, default='amazon-reviews',
-                        help='Kafka topic to send messages to')
-    parser.add_argument('--delay', type=float, default=0.1,
-                        help='Delay between messages in seconds')
-    parser.add_argument('--test-mode', action='store_true',
-                        help='Use 10% of data for testing')
-    return parser.parse_args()
+def create_kafka_producer():
+    """Create and return a Kafka producer instance."""
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=['kafka:9092'],
+            value_serializer=lambda x: json.dumps(x).encode('utf-8'),
+            acks='all',
+            retries=3
+        )
+        return producer
+    except Exception as e:
+        logger.error(f"Failed to create Kafka producer: {e}")
+        raise
 
+def read_parquet_file(file_path):
+    """Read the parquet file and return a pandas DataFrame."""
+    try:
+        df = pd.read_parquet(file_path)
+        return df
+    except Exception as e:
+        logger.error(f"Failed to read parquet file: {e}")
+        raise
 
-def create_producer(bootstrap_servers):
-    """Create and return a Kafka producer."""
-    return KafkaProducer(
-        bootstrap_servers=bootstrap_servers,
-        value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-        api_version=(0, 10, 1)
-    )
-
-
-def stream_data(producer, data_df, topic, delay, test_mode=False):
-    """Stream data to Kafka topic."""
-    if test_mode:
-        # Use 10% of data for testing
-        data_df = data_df.sample(frac=0.1)
-
-    print(f"Streaming {len(data_df)} reviews to topic '{topic}'...")
-
-    for index, review in data_df.iterrows():
-        # Convert review to dictionary
-        review_dict = review.to_dict()
-
-        # Add timestamp for real-time visualization
-        review_dict['stream_timestamp'] = datetime.now().isoformat()
-
-        # Send to Kafka
-        producer.send(topic, review_dict)
-
-        if index % 100 == 0:
-            print(f"Sent {index} messages to Kafka")
-
-        # Simulate real-time streaming with delay
+def send_reviews_to_kafka(producer, df, topic_name, batch_size=100, delay=0.1):
+    """
+    Send reviews to Kafka topic with rate limiting.
+    
+    Args:
+        producer: Kafka producer instance
+        df: DataFrame containing reviews
+        topic_name: Name of the Kafka topic
+        batch_size: Number of records to process in each batch
+        delay: Delay between batches in seconds
+    """
+    total_records = len(df)
+    logger.info(f"Starting to send {total_records} reviews to Kafka topic: {topic_name}")
+    
+    for i in range(0, total_records, batch_size):
+        batch = df.iloc[i:i+batch_size]
+        
+        for _, row in batch.iterrows():
+            # Convert row to dictionary and handle datetime objects
+            record = row.to_dict()
+            for key, value in record.items():
+                if isinstance(value, pd.Timestamp):
+                    record[key] = value.isoformat()
+            
+            # Add timestamp of when the record is being sent
+            record['kafka_timestamp'] = datetime.now().isoformat()
+            
+            try:
+                producer.send(topic_name, value=record)
+            except Exception as e:
+                logger.error(f"Failed to send record to Kafka: {e}")
+        
+        # Flush after each batch to ensure messages are sent
+        producer.flush()
+        
+        logger.info(f"Sent batch of {len(batch)} records. Progress: {min(i+batch_size, total_records)}/{total_records}")
+        
+        # Add delay between batches to control the rate
         time.sleep(delay)
 
-    producer.flush()
-    print("Finished streaming data.")
-
-
 def main():
-    """Main function."""
-    args = parse_arguments()
-
+    # Configuration
+    KAFKA_TOPIC = "amazon-reviews"
+    PARQUET_FILE = "/data/processed/test_data.parquet"
+    BATCH_SIZE = 100
+    DELAY = 0.1  # 100ms delay between batches
+    
     try:
-        # Load Amazon reviews data
-        print(f"Loading data from {args.data_path}...")
-        reviews_df = pd.read_json(args.data_path, lines=True)
-        print(f"Loaded {len(reviews_df)} reviews.")
-
         # Create Kafka producer
-        producer = create_producer(args.bootstrap_servers)
-
-        # Stream data to Kafka
-        stream_data(producer, reviews_df, args.topic, args.delay, args.test_mode)
-
+        producer = create_kafka_producer()
+        
+        # Read parquet file
+        df = read_parquet_file(PARQUET_FILE)
+        
+        # Send reviews to Kafka
+        send_reviews_to_kafka(
+            producer=producer,
+            df=df,
+            topic_name=KAFKA_TOPIC,
+            batch_size=BATCH_SIZE,
+            delay=DELAY
+        )
+        
+        logger.info("Successfully completed sending all reviews to Kafka")
+        
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"An error occurred: {e}")
     finally:
         if 'producer' in locals():
             producer.close()
-
 
 if __name__ == "__main__":
     main()

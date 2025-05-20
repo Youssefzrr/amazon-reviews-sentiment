@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Reviews Sentiment Analysis - Live Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <h1>Amazon Reviews Sentiment Analysis</h1>
+            <div class="nav-links">
+                <a href="/" class="active">Live Dashboard</a>
+                <a href="/offline">Offline Analysis</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="dashboard-container">
+            <div class="realtime-stats">
+                <h2>Real-time Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Reviews Today</h3>
+                        <div id="total-reviews-today" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Positive Sentiment</h3>
+                        <div id="positive-sentiment" class="stat-value">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Average Rating</h3>
+                        <div id="avg-rating" class="stat-value">0.0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Processing Rate</h3>
+                        <div id="processing-rate" class="stat-value">0/min</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3>Live Sentiment Trends</h3>
+                    <canvas id="sentiment-trends-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Top Products</h3>
+                    <canvas id="top-products-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="live-feed">
+                <h3>Live Review Feed</h3>
+                <div class="feed-controls">
+                    <div class="filter-group">
+                        <label for="sentiment-filter">Filter by Sentiment:</label>
+                        <select id="sentiment-filter">
+                            <option value="all">All</option>
+                            <option value="positive">Positive</option>
+                            <option value="negative">Negative</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="rating-filter">Filter by Rating:</label>
+                        <select id="rating-filter">
+                            <option value="all">All</option>
+                            <option value="5">5 Stars</option>
+                            <option value="4">4 Stars</option>
+                            <option value="3">3 Stars</option>
+                            <option value="2">2 Stars</option>
+                            <option value="1">1 Star</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="reviews-feed" class="reviews-container">
+                    <!-- Reviews will be dynamically added here -->
+                </div>
+            </div>
+
+            <div class="alerts-section">
+                <h3>System Alerts</h3>
+                <div id="alerts-container">
+                    <!-- Alerts will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
