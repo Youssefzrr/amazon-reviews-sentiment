@@ -1,2 +1,3 @@
-pandas
-kafka
+confluent-kafka==2.2.0
+pandas==2.0.0
+pyspark==3.4.0

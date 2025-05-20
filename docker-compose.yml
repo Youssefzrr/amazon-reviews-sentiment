@@ -87,17 +87,6 @@ services:
     networks:
       - app-network
 
-  # Jupyter Notebook with PySpark
-  jupyter:
-    image: jupyter/pyspark-notebook:latest
-    container_name: jupyter
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./notebooks:/home/jovyan/work
-    environment:
-      - SPARK_OPTS=--master=spark://spark-master:7077
-
   # Web Dashboard (Flask App)
   web_dashboard:
     build: 
@@ -152,24 +141,6 @@ services:
       - ./spark_streaming:/app
       - ./models:/models
       - spark_streaming_logs:/app/logs
-    networks:
-      - app-network
-
-  # Pipeline Test
-  pipeline_test:
-    build: 
-      context: ./web_dashboard/tests
-      dockerfile: Dockerfile
-    container_name: pipeline_test
-    depends_on:
-      - kafka
-      - spark_streaming
-      - web_dashboard
-      - mongodb
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - MONGODB_URI=mongodb://admin:adminpassword@mongodb:27017/
-      - WEB_DASHBOARD_URL=http://web_dashboard:5000
     networks:
       - app-network
 

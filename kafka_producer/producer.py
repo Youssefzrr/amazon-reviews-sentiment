@@ -1,7 +1,8 @@
-from kafka import KafkaProducer
-import pandas as pd
+from confluent_kafka import Producer
 import json
 import time
+import pandas as pd
+from pyspark.sql import SparkSession
 import logging
 from datetime import datetime
 
@@ -12,25 +13,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Configuration
+KAFKA_BOOTSTRAP_SERVERS = 'kafka:9092'
+KAFKA_TOPIC = 'amazon-reviews'
+TEST_DATA_PATH = '/data/processed/test_data.parquet'
+
+def delivery_report(err, msg):
+    """Callback for message delivery reports."""
+    if err is not None:
+        logger.error(f'Message delivery failed: {err}')
+    else:
+        logger.debug(f'Message delivered to {msg.topic()} [{msg.partition()}]')
+
 def create_kafka_producer():
     """Create and return a Kafka producer instance."""
     try:
-        producer = KafkaProducer(
-            bootstrap_servers=['kafka:9092'],
-            value_serializer=lambda x: json.dumps(x).encode('utf-8'),
-            acks='all',
-            retries=3
-        )
-        return producer
+        conf = {
+            'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
+            'client.id': 'amazon-reviews-producer',
+            'acks': 'all',
+            'retries': 3
+        }
+        return Producer(conf)
     except Exception as e:
         logger.error(f"Failed to create Kafka producer: {e}")
         raise
 
 def read_parquet_file(file_path):
-    """Read the parquet file and return a pandas DataFrame."""
+    """Read the parquet file using Spark and convert to pandas DataFrame."""
     try:
-        df = pd.read_parquet(file_path)
-        return df
+        spark = SparkSession.builder \
+            .appName("Kafka Producer - Amazon Reviews") \
+            .getOrCreate()
+        
+        df = spark.read.parquet(file_path)
+        pandas_df = df.toPandas()
+        spark.stop()
+        return pandas_df
     except Exception as e:
         logger.error(f"Failed to read parquet file: {e}")
         raise
@@ -53,17 +72,33 @@ def send_reviews_to_kafka(producer, df, topic_name, batch_size=100, delay=0.1):
         batch = df.iloc[i:i+batch_size]
         
         for _, row in batch.iterrows():
-            # Convert row to dictionary and handle datetime objects
-            record = row.to_dict()
-            for key, value in record.items():
-                if isinstance(value, pd.Timestamp):
-                    record[key] = value.isoformat()
+            # Create message as JSON
+            message = {
+                'reviewerID': row.get('reviewerID', ''),
+                'asin': row.get('asin', ''),
+                'reviewerName': row.get('reviewerName', ''),
+                'reviewText': row.get('reviewText', ''),
+                'overall': float(row.get('overall', 0.0)),
+                'summary': row.get('summary', ''),
+                'unixReviewTime': int(row.get('unixReviewTime', 0)),
+                'reviewTime': row.get('reviewTime', ''),
+                'kafka_timestamp': datetime.now().isoformat()
+            }
             
-            # Add timestamp of when the record is being sent
-            record['kafka_timestamp'] = datetime.now().isoformat()
+            # Convert to JSON string
+            message_json = json.dumps(message)
             
             try:
-                producer.send(topic_name, value=record)
+                # Send to Kafka
+                producer.produce(
+                    topic_name,
+                    message_json.encode('utf-8'),
+                    callback=delivery_report
+                )
+                
+                # Trigger any available delivery callbacks
+                producer.poll(0)
+                
             except Exception as e:
                 logger.error(f"Failed to send record to Kafka: {e}")
         
@@ -76,26 +111,20 @@ def send_reviews_to_kafka(producer, df, topic_name, batch_size=100, delay=0.1):
         time.sleep(delay)
 
 def main():
-    # Configuration
-    KAFKA_TOPIC = "amazon-reviews"
-    PARQUET_FILE = "/data/processed/test_data.parquet"
-    BATCH_SIZE = 100
-    DELAY = 0.1  # 100ms delay between batches
-    
     try:
         # Create Kafka producer
         producer = create_kafka_producer()
         
         # Read parquet file
-        df = read_parquet_file(PARQUET_FILE)
+        df = read_parquet_file(TEST_DATA_PATH)
         
         # Send reviews to Kafka
         send_reviews_to_kafka(
             producer=producer,
             df=df,
             topic_name=KAFKA_TOPIC,
-            batch_size=BATCH_SIZE,
-            delay=DELAY
+            batch_size=100,
+            delay=0.1
         )
         
         logger.info("Successfully completed sending all reviews to Kafka")
@@ -104,7 +133,7 @@ def main():
         logger.error(f"An error occurred: {e}")
     finally:
         if 'producer' in locals():
-            producer.close()
+            producer.flush()
 
 if __name__ == "__main__":
     main()
