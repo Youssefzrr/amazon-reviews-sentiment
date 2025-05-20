@@ -88,23 +88,13 @@ services:
 
   # Web Dashboard (Flask App)
   web_dashboard:
-    build:
-      context: ./web_dashboard
-      dockerfile: Dockerfile
-    container_name: web_dashboard
+    build: ./web_dashboard
     ports:
       - "5000:5000"
-    depends_on:
-      mongodb:
-        condition: service_started
-      kafka:
-        condition: service_healthy
-    environment:
-      - MONGODB_URI=mongodb://admin:adminpassword@mongodb:27017/
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     volumes:
       - ./web_dashboard:/app
-      - web_dashboard_logs:/app/logs
+    depends_on:
+      - mongodb
     networks:
       - app-network
 
