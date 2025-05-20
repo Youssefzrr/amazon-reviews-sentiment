@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.8-slim
 
 WORKDIR /app
 
@@ -29,4 +29,4 @@ ENV PYTHONUNBUFFERED=1
 # Make wait-for-it.sh executable
 RUN chmod +x wait-for-it.sh
 
-CMD ["./wait-for-it.sh", "kafka:9092", "--", "python", "producer.py"]
+CMD ["./wait-for-it.sh", "kafka", "29092", "--", "python", "producer.py"]

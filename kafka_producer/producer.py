@@ -1,8 +1,8 @@
-from confluent_kafka import Producer
+from kafka import KafkaProducer
 import json
 import time
 import pandas as pd
-from pyspark.sql import SparkSession
+import numpy as np
 import logging
 from datetime import datetime
 
@@ -13,46 +13,57 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Configuration
-KAFKA_BOOTSTRAP_SERVERS = 'kafka:9092'
-KAFKA_TOPIC = 'amazon-reviews'
-TEST_DATA_PATH = '/data/processed/test_data.parquet'
-
-def delivery_report(err, msg):
-    """Callback for message delivery reports."""
-    if err is not None:
-        logger.error(f'Message delivery failed: {err}')
-    else:
-        logger.debug(f'Message delivered to {msg.topic()} [{msg.partition()}]')
+class NumpyEncoder(json.JSONEncoder):
+    """Custom JSON encoder for numpy types"""
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        return super(NumpyEncoder, self).default(obj)
 
 def create_kafka_producer():
     """Create and return a Kafka producer instance."""
     try:
-        conf = {
-            'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
-            'client.id': 'amazon-reviews-producer',
-            'acks': 'all',
-            'retries': 3
-        }
-        return Producer(conf)
+        producer = KafkaProducer(
+            bootstrap_servers=['kafka:29092'],
+            value_serializer=lambda x: json.dumps(x, cls=NumpyEncoder).encode('utf-8'),
+            acks='all',
+            retries=3,
+            request_timeout_ms=30000,
+            api_version_auto_timeout_ms=30000
+        )
+        return producer
     except Exception as e:
         logger.error(f"Failed to create Kafka producer: {e}")
         raise
 
 def read_parquet_file(file_path):
-    """Read the parquet file using Spark and convert to pandas DataFrame."""
+    """Read the parquet file and return a pandas DataFrame."""
     try:
-        spark = SparkSession.builder \
-            .appName("Kafka Producer - Amazon Reviews") \
-            .getOrCreate()
-        
-        df = spark.read.parquet(file_path)
-        pandas_df = df.toPandas()
-        spark.stop()
-        return pandas_df
+        df = pd.read_parquet(file_path)
+        return df
     except Exception as e:
         logger.error(f"Failed to read parquet file: {e}")
         raise
+
+def convert_numpy_types(record):
+    """Convert numpy types to Python native types."""
+    converted = {}
+    for key, value in record.items():
+        if isinstance(value, np.ndarray):
+            converted[key] = value.tolist()
+        elif isinstance(value, np.integer):
+            converted[key] = int(value)
+        elif isinstance(value, np.floating):
+            converted[key] = float(value)
+        elif isinstance(value, pd.Timestamp):
+            converted[key] = value.isoformat()
+        else:
+            converted[key] = value
+    return converted
 
 def send_reviews_to_kafka(producer, df, topic_name, batch_size=100, delay=0.1):
     """
@@ -72,33 +83,14 @@ def send_reviews_to_kafka(producer, df, topic_name, batch_size=100, delay=0.1):
         batch = df.iloc[i:i+batch_size]
         
         for _, row in batch.iterrows():
-            # Create message as JSON
-            message = {
-                'reviewerID': row.get('reviewerID', ''),
-                'asin': row.get('asin', ''),
-                'reviewerName': row.get('reviewerName', ''),
-                'reviewText': row.get('reviewText', ''),
-                'overall': float(row.get('overall', 0.0)),
-                'summary': row.get('summary', ''),
-                'unixReviewTime': int(row.get('unixReviewTime', 0)),
-                'reviewTime': row.get('reviewTime', ''),
-                'kafka_timestamp': datetime.now().isoformat()
-            }
+            # Convert row to dictionary and handle numpy types
+            record = convert_numpy_types(row.to_dict())
             
-            # Convert to JSON string
-            message_json = json.dumps(message)
+            # Add timestamp of when the record is being sent
+            record['kafka_timestamp'] = datetime.now().isoformat()
             
             try:
-                # Send to Kafka
-                producer.produce(
-                    topic_name,
-                    message_json.encode('utf-8'),
-                    callback=delivery_report
-                )
-                
-                # Trigger any available delivery callbacks
-                producer.poll(0)
-                
+                producer.send(topic_name, value=record)
             except Exception as e:
                 logger.error(f"Failed to send record to Kafka: {e}")
         
@@ -111,20 +103,26 @@ def send_reviews_to_kafka(producer, df, topic_name, batch_size=100, delay=0.1):
         time.sleep(delay)
 
 def main():
+    # Configuration
+    KAFKA_TOPIC = "amazon-reviews"
+    PARQUET_FILE = "/data/processed/test_data.parquet"
+    BATCH_SIZE = 4
+    DELAY = 1  # 1000ms delay between batches
+    
     try:
         # Create Kafka producer
         producer = create_kafka_producer()
         
         # Read parquet file
-        df = read_parquet_file(TEST_DATA_PATH)
+        df = read_parquet_file(PARQUET_FILE)
         
         # Send reviews to Kafka
         send_reviews_to_kafka(
             producer=producer,
             df=df,
             topic_name=KAFKA_TOPIC,
-            batch_size=100,
-            delay=0.1
+            batch_size=BATCH_SIZE,
+            delay=DELAY
         )
         
         logger.info("Successfully completed sending all reviews to Kafka")
@@ -133,7 +131,7 @@ def main():
         logger.error(f"An error occurred: {e}")
     finally:
         if 'producer' in locals():
-            producer.flush()
+            producer.close()
 
 if __name__ == "__main__":
     main()

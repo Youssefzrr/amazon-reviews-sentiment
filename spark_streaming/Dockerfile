@@ -1,15 +1,13 @@
-FROM python:3.9-slim
+FROM python:3.8-slim
 
 WORKDIR /app
 
 # Install Java and other dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     default-jre \
     wget \
     procps \
     netcat-openbsd \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Java home
@@ -47,4 +45,4 @@ RUN mkdir -p /app/checkpoints /app/logs
 COPY wait-for-it.sh /wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
 
-CMD ["/wait-for-it.sh", "kafka:9092", "--", "/wait-for-it.sh", "mongodb:27017", "--", "python", "streaming_app.py"]
+CMD ["./wait-for-it.sh", "kafka", "29092", "--", "/wait-for-it.sh", "mongodb", "27017", "--", "python", "streaming_app.py"]

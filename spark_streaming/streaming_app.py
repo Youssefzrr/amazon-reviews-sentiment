@@ -24,6 +24,12 @@ nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
 
+# Kafka configuration
+KAFKA_BOOTSTRAP_SERVERS = 'kafka:29092'  # Updated port
+
+# Update the model path
+MODEL_PATH = '/app/data/models/sentiment_model'  # This matches the Docker volume mount
+
 class ReviewProcessor:
     def __init__(self):
         self.stop_words = set(stopwords.words('english'))
@@ -37,7 +43,7 @@ class ReviewProcessor:
         """Load the Spark MLlib models."""
         try:
             # Load the sentiment model
-            self.sentiment_model = PipelineModel.load('/models/sentiment_model')
+            self.sentiment_model = PipelineModel.load(MODEL_PATH)
             
             # Load the TF-IDF model
             self.tfidf_model = PipelineModel.load('/models/tfidf_model')
@@ -155,7 +161,7 @@ def main():
         # Read from Kafka
         df = spark.readStream \
             .format("kafka") \
-            .option("kafka.bootstrap.servers", "kafka:9092") \
+            .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS) \
             .option("subscribe", "amazon-reviews") \
             .option("startingOffsets", "latest") \
             .load()
