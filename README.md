@@ -32,30 +32,24 @@ This project provides a real-time sentiment analysis pipeline for Amazon product
    ```sh
    git clone https://github.com/Youssefzrr/amazon-reviews-sentiment.git
    cd amazon-reviews-sentiment
+   ```
 
 2. **Build and start the services:**
    ```sh
+   docker-compose build
    docker-compose up -d
-    ```
-3. **Run the Kafka producer:**
-4. ```sh
-   cd kafka_producer
-   python producer.py
    ```
-5. **Run the Spark Streaming application:**
+
+3. **Check MongoDB for results:**
    ```sh
-    cd spark_streaming
-    spark-submit --master local[2] --packages org.mongodb.spark:mongo-spark-connector_2.12:3.0.1 streaming_app.py
-    ```
-6. **Check MongoDB for results:**
-7. ```sh
    docker exec -it mongodb mongo
-   use reviews_db
+   use amazon_reviews
    db.reviews.find().pretty()
    ```
-8. **Stop the services:**
+
+4. **Stop the services:**
    ```sh
-    docker-compose down
+   docker-compose down
     ```
 ## Configuration
 - **Kafka Configuration:** Modify `kafka_producer/config.py` to set the Kafka broker address and topic name.
