@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import from_json, col, udf
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, TimestampType
+from pyspark.sql.types import StructType, StructField, StringType, FloatType, TimestampType, ArrayType, IntegerType, LongType, IntegerType
 from pyspark.ml import PipelineModel
 import logging
 from datetime import datetime
@@ -96,14 +96,13 @@ class ReviewProcessor:
             
             # Apply TF-IDF transformation
             tfidf_features = self.tfidf_model.transform(text_df)
+            logger.info("Applied TF-IDF transformation")
             
-            # Drop all intermediate columns that might cause conflicts
+            # Drop any intermediate columns that might cause conflicts
             columns_to_drop = ["words", "rawFeatures", "filtered_words", "features", "rawPrediction", "raw_features"]
             for col in columns_to_drop:
                 if col in tfidf_features.columns:
                     tfidf_features = tfidf_features.drop(col)
-            
-            logger.info("Applied TF-IDF transformation")
             
             # Select only the features column for prediction
             if "features" in tfidf_features.columns:
@@ -111,21 +110,33 @@ class ReviewProcessor:
             
             # Predict sentiment
             prediction = self.sentiment_model.transform(tfidf_features)
-            
-            # Drop any additional columns that might have been created
-            for col in columns_to_drop:
-                if col in prediction.columns:
-                    prediction = prediction.drop(col)
-                
             logger.info("Applied sentiment model")
             
             # Extract prediction and probability
             result = prediction.select("prediction", "probability").first()
             logger.info(f"Prediction result: {result}")
             
+            # Get the prediction and probability values
+            pred_value = int(result.prediction)
+            prob_values = result.probability.toArray()
+            max_prob = float(max(prob_values))
+            
+            # Map prediction to sentiment label
+            if pred_value == 0:
+                sentiment_label = "negative"
+            elif pred_value == 1:
+                sentiment_label = "neutral"
+            elif pred_value == 2:
+                sentiment_label = "positive"
+            else:
+                sentiment_label = "unknown"
+                logger.warning(f"Unexpected prediction value: {pred_value}")
+            
+            logger.info(f"Mapped prediction {pred_value} to label: {sentiment_label} with confidence: {max_prob}")
+            
             return {
-                'sentiment': int(result.prediction),
-                'confidence': float(max(result.probability))
+                'label': sentiment_label,
+                'confidence': max_prob
             }
         except Exception as e:
             logger.error(f"Error in sentiment prediction: {e}")
@@ -135,31 +146,30 @@ class ReviewProcessor:
                 logger.error(f"Available columns after TF-IDF: {tfidf_features.columns}")
             if 'prediction' in locals():
                 logger.error(f"Available columns after prediction: {prediction.columns}")
-            return {'sentiment': -1, 'confidence': 0.0}
+            return {'label': "unknown", 'confidence': 0.0}
 
     def store_in_mongodb(self, review_data, prediction):
         """Store the review and prediction in MongoDB."""
         try:
-            # Clear the predictions collection before inserting new data
-            self.db.predictions.delete_many({})
-            logger.info("Cleared existing predictions from MongoDB")
-            
             document = {
-                'review_id': review_data.get('review_id', ''),
-                'product_id': review_data.get('product_id', ''),
-                'user_id': review_data.get('user_id', ''),
-                'review_text': review_data.get('reviewText', ''),
-                'review_title': review_data.get('review_title', ''),
-                'review_date': review_data.get('review_date', ''),
-                'kafka_timestamp': review_data.get('kafka_timestamp', ''),
+                'asin': review_data.get('asin'),
+                'helpful': review_data.get('helpful'),
+                'overall': review_data.get('overall'),
+                'reviewText': review_data.get('reviewText'),
+                'reviewTime': review_data.get('reviewTime'),
+                'reviewerID': review_data.get('reviewerID'),
+                'reviewerName': review_data.get('reviewerName'),
+                'summary': review_data.get('summary'),
+                'unixReviewTime': review_data.get('unixReviewTime'),
+                'kafka_timestamp': review_data.get('kafka_timestamp'),
                 'processed_timestamp': datetime.now().isoformat(),
-                'sentiment': prediction['sentiment'],
+                'label': prediction['label'],
                 'confidence': prediction['confidence'],
                 'is_realtime': True
             }
             
             self.db.predictions.insert_one(document)
-            logger.info(f"Stored review {document['review_id']} in MongoDB")
+            logger.info(f"Stored review {document['asin']} in MongoDB")
         except Exception as e:
             logger.error(f"Failed to store in MongoDB: {e}")
 
@@ -182,12 +192,16 @@ def main():
         
         # Define schema for Kafka messages - match your producer's output
         schema = StructType([
-            StructField("review_id", StringType()),
-            StructField("product_id", StringType()),
-            StructField("user_id", StringType()),
-            StructField("reviewText", StringType()),  # Changed to match your notebook
-            StructField("review_title", StringType()),
-            StructField("review_date", StringType()),
+            StructField("asin", StringType()),
+            StructField("helpful", ArrayType(IntegerType())),
+            StructField("overall", FloatType()),
+            StructField("reviewText", StringType()),
+            StructField("reviewTime", StringType()),
+            StructField("reviewerID", StringType()),
+            StructField("reviewerName", StringType()),
+            StructField("summary", StringType()),
+            StructField("unixReviewTime", LongType()),
+            StructField("sentiment", IntegerType()),
             StructField("kafka_timestamp", StringType())
         ])
         
@@ -225,8 +239,32 @@ def main():
                         logger.error(f"Review text not found. Available fields: {list(review_data.keys())}")
                         continue
                         
+                    # Get prediction
                     prediction = processor.predict_sentiment(spark, review_text)
-                    processor.store_in_mongodb(review_data, prediction)
+                    logger.info(f"Prediction result: {prediction}")  # Debug log
+                    
+                    # Create document for MongoDB
+                    document = {
+                        'asin': review_data.get('asin'),
+                        'helpful': review_data.get('helpful'),
+                        'overall': review_data.get('overall'),
+                        'reviewText': review_text,
+                        'reviewTime': review_data.get('reviewTime'),
+                        'reviewerID': review_data.get('reviewerID'),
+                        'reviewerName': review_data.get('reviewerName'),
+                        'summary': review_data.get('summary'),
+                        'unixReviewTime': review_data.get('unixReviewTime'),
+                        'kafka_timestamp': review_data.get('kafka_timestamp'),
+                        'processed_timestamp': datetime.now().isoformat(),
+                        'label': prediction['label'],  # Use the label from prediction
+                        'confidence': prediction['confidence'],  # Use the confidence from prediction
+                        'is_realtime': True
+                    }
+                    
+                    # Store in MongoDB
+                    processor.db.predictions.insert_one(document)
+                    logger.info(f"Stored review {document['asin']} in MongoDB with label: {document['label']} and confidence: {document['confidence']}")
+                    
                 except Exception as e:
                     logger.error(f"Error processing review: {e}")
                     logger.error(f"Review data: {review_data}")

@@ -1,5 +1,4 @@
 // Global variables
-let sentimentChart = null;
 let timeSeriesChart = null;
 const API_ENDPOINT = '/api/stats';
 const UPDATE_INTERVAL = 5000; // 5 seconds
@@ -109,11 +108,116 @@ function showError(message) {
     if (errorDiv) {
         errorDiv.textContent = message;
         errorDiv.style.display = 'block';
-    setTimeout(() => {
+        setTimeout(() => {
             errorDiv.style.display = 'none';
-    }, 5000);
-}
+        }, 5000);
+    }
 }
 
+// Updated dashboard.js for three sentiment categories and modern chart logic
+function sentimentIcon(sentiment) {
+    if (sentiment === 'positive') return '<i class="fa-solid fa-face-smile text-success"></i>';
+    if (sentiment === 'neutral') return '<i class="fa-solid fa-face-meh text-warning"></i>';
+    if (sentiment === 'negative') return '<i class="fa-solid fa-face-frown text-danger"></i>';
+    return '<i class="fa-solid fa-question text-secondary"></i>';
+}
+
+function sentimentLabel(sentiment) {
+    if (sentiment === 'positive') return 'Positive';
+    if (sentiment === 'neutral') return 'Neutral';
+    if (sentiment === 'negative') return 'Negative';
+    return 'Unknown';
+}
+
+function renderReviews(containerId, data) {
+    const container = document.querySelector(containerId);
+    container.innerHTML = '';
+    if (!data || data.length === 0) {
+        container.innerHTML = '<p class="text-muted">No reviews available.</p>';
+        return;
+    }
+    data.forEach(review => {
+        container.innerHTML += `
+            <div class="mb-3 p-3 border rounded review-block">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>${sentimentIcon(review.sentiment)} <strong>Sentiment:</strong> ${sentimentLabel(review.sentiment)}</span>
+                    <span class="badge bg-secondary">${new Date(review.timestamp).toLocaleString()}</span>
+                </div>
+                <div class="mb-2"><strong>Confidence:</strong> ${(review.confidence * 100).toFixed(2)}%</div>
+                <div class="mb-2"><strong>Product:</strong> ${review.product_id || 'N/A'}</div>
+                <div class="mb-2"><strong>Reviewer:</strong> ${review.reviewer || 'N/A'}</div>
+                <div class="mb-2"><strong>Summary:</strong> ${review.summary || 'N/A'}</div>
+                <div class="mb-2"><strong>Rating:</strong> ${review.rating || 'N/A'}</div>
+                <div class="review-text">${review.review_text}</div>
+            </div>
+        `;
+    });
+}
+
+function fetchRealtime() {
+    fetch('/api/realtime').then(r => r.json()).then(data => {
+        renderReviews('#realtime-container', data);
+    });
+}
+
+let sentimentChart, sentimentTimeChart;
+function renderOfflineDashboard(data) {
+    document.getElementById('total-reviews').textContent = data.total_reviews;
+    document.getElementById('avg-confidence').textContent = (data.avg_confidence * 100).toFixed(2) + '%';
+    document.getElementById('avg-rating').textContent = data.avg_rating.toFixed(2);
+    const ctx = document.getElementById('sentiment-chart').getContext('2d');
+    if (sentimentChart) sentimentChart.destroy();
+    sentimentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Positive', 'Neutral', 'Negative'],
+            datasets: [{
+                data: [data.positive_count, data.neutral_count, data.negative_count],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            plugins: { legend: { display: true } }
+        }
+    });
+    const timeLabels = Object.keys(data.hourly_sentiment).sort();
+    const positiveData = timeLabels.map(l => data.hourly_sentiment[l].positive);
+    const neutralData = timeLabels.map(l => data.hourly_sentiment[l].neutral);
+    const negativeData = timeLabels.map(l => data.hourly_sentiment[l].negative);
+    const ctxTime = document.getElementById('sentiment-time-chart').getContext('2d');
+    if (sentimentTimeChart) sentimentTimeChart.destroy();
+    sentimentTimeChart = new Chart(ctxTime, {
+        type: 'line',
+        data: {
+            labels: timeLabels,
+            datasets: [
+                { label: 'Positive', data: positiveData, borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', fill: true },
+                { label: 'Neutral', data: neutralData, borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.1)', fill: true },
+                { label: 'Negative', data: negativeData, borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.1)', fill: true }
+            ]
+        },
+        options: {
+            scales: {
+                x: { title: { display: true, text: 'Hour' } },
+                y: { title: { display: true, text: 'Count' }, beginAtZero: true }
+            }
+        }
+    });
+    renderReviews('#offline-container', data.recent_reviews);
+}
+
+function fetchOffline() {
+    fetch('/api/offline').then(r => r.json()).then(data => {
+        renderOfflineDashboard(data);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetchRealtime();
+    fetchOffline();
+    setInterval(fetchRealtime, 5000);
+    setInterval(fetchOffline, 10000);
+});
+
 // Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', initDashboard);
+document.addEventListener('DOMContentLoaded', initDashboard)

@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.StringIndexerModel","timestamp":1747916724549,"sparkVersion":"3.5.5","uid":"StringIndexer_12787ef8e262","paramMap":{"inputCol":"sentiment","outputCol":"label"},"defaultParamMap":{"outputCol":"StringIndexer_12787ef8e262__output","stringOrderType":"frequencyDesc","handleInvalid":"error"}}

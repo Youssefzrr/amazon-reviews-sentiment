@@ -83,12 +83,22 @@ def send_reviews_to_kafka(producer, df, topic_name, batch_size=100, delay=0.1):
         batch = df.iloc[i:i+batch_size]
         
         for _, row in batch.iterrows():
-            record = row.to_dict()
-            # Add timestamp
-            record['kafka_timestamp'] = datetime.now().isoformat()
+            record = {
+                'asin': row.get('asin'),
+                'helpful': row.get('helpful', [0, 0]),
+                'overall': float(row.get('overall', 0.0)),
+                'reviewText': row.get('reviewText', ''),
+                'reviewTime': row.get('reviewTime', ''),
+                'reviewerID': row.get('reviewerID', ''),
+                'reviewerName': row.get('reviewerName', ''),
+                'summary': row.get('summary', ''),
+                'unixReviewTime': int(row.get('unixReviewTime', 0)),
+                'sentiment': int(row.get('sentiment', 0)),
+                'kafka_timestamp': datetime.now().isoformat()
+            }
             
             # Debug: Print the record structure
-            print(f"Sending record: {record}")
+            logger.info(f"Sending record: {record}")
             
             try:
                 producer.send(topic_name, value=record)
@@ -108,7 +118,7 @@ def main():
     KAFKA_TOPIC = "amazon-reviews"
     PARQUET_FILE = "/data/processed/test_data.parquet"
     BATCH_SIZE = 4
-    DELAY = 1  # 1000ms delay between batches
+    DELAY = 10
     
     try:
         # Create Kafka producer

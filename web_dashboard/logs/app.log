@@ -1,0 +1,126 @@
+2025-05-20 13:15:07,778 - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-05-20 13:15:07,780 - INFO -  * Running on http://172.18.0.9:5000/ (Press CTRL+C to quit)
+2025-05-20 13:15:07,783 - INFO -  * Restarting with stat
+2025-05-20 13:15:09,096 - WARNING -  * Debugger is active!
+2025-05-20 13:15:09,098 - INFO -  * Debugger PIN: 420-412-592
+2025-05-20 13:16:46,727 - INFO - 172.18.0.1 - - [20/May/2025 13:16:46] "GET / HTTP/1.1" 200 -
+2025-05-20 13:16:46,934 - INFO - 172.18.0.1 - - [20/May/2025 13:16:46] "[33mGET /static/css/style.css HTTP/1.1[0m" 404 -
+2025-05-20 13:16:46,948 - INFO - 172.18.0.1 - - [20/May/2025 13:16:46] "GET / HTTP/1.1" 200 -
+2025-05-20 13:16:46,949 - INFO - 172.18.0.1 - - [20/May/2025 13:16:46] "[33mGET /static/css/dashboard.css HTTP/1.1[0m" 404 -
+2025-05-20 13:16:46,955 - INFO - 172.18.0.1 - - [20/May/2025 13:16:46] "[33mGET /static/js/main.js HTTP/1.1[0m" 404 -
+2025-05-20 13:16:46,956 - INFO - 172.18.0.1 - - [20/May/2025 13:16:46] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:16:48,015 - INFO - 172.18.0.1 - - [20/May/2025 13:16:48] "[33mGET /static/css/style.css HTTP/1.1[0m" 404 -
+2025-05-20 13:16:48,105 - INFO - 172.18.0.1 - - [20/May/2025 13:16:48] "[33mGET /static/css/dashboard.css HTTP/1.1[0m" 404 -
+2025-05-20 13:16:48,157 - INFO - 172.18.0.1 - - [20/May/2025 13:16:48] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:16:48,160 - INFO - 172.18.0.1 - - [20/May/2025 13:16:48] "[33mGET /static/js/main.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:13,778 - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-05-20 13:20:13,779 - INFO -  * Running on http://172.18.0.5:5000/ (Press CTRL+C to quit)
+2025-05-20 13:20:13,783 - INFO -  * Restarting with stat
+2025-05-20 13:20:14,304 - WARNING -  * Debugger is active!
+2025-05-20 13:20:14,306 - INFO -  * Debugger PIN: 128-779-741
+2025-05-20 13:20:33,320 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "GET / HTTP/1.1" 200 -
+2025-05-20 13:20:33,342 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "GET / HTTP/1.1" 200 -
+2025-05-20 13:20:33,550 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,561 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,562 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/css/style.css HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,563 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/css/dashboard.css HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,564 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/js/main.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,801 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,802 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,803 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/css/style.css HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,804 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/js/main.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:33,804 - INFO - 172.18.0.1 - - [20/May/2025 13:20:33] "[33mGET /static/css/dashboard.css HTTP/1.1[0m" 404 -
+2025-05-20 13:20:42,296 - INFO - 172.18.0.1 - - [20/May/2025 13:20:42] "GET / HTTP/1.1" 200 -
+2025-05-20 13:20:42,318 - INFO - 172.18.0.1 - - [20/May/2025 13:20:42] "GET / HTTP/1.1" 200 -
+2025-05-20 13:20:42,398 - INFO - 172.18.0.1 - - [20/May/2025 13:20:42] "[33mGET /static/css/style.css HTTP/1.1[0m" 404 -
+2025-05-20 13:20:42,497 - INFO - 172.18.0.1 - - [20/May/2025 13:20:42] "[33mGET /static/js/main.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:42,498 - INFO - 172.18.0.1 - - [20/May/2025 13:20:42] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:42,505 - INFO - 172.18.0.1 - - [20/May/2025 13:20:42] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:42,506 - INFO - 172.18.0.1 - - [20/May/2025 13:20:42] "[33mGET /static/css/dashboard.css HTTP/1.1[0m" 404 -
+2025-05-20 13:20:43,136 - INFO - 172.18.0.1 - - [20/May/2025 13:20:43] "GET /offline HTTP/1.1" 200 -
+2025-05-20 13:20:43,371 - INFO - 172.18.0.1 - - [20/May/2025 13:20:43] "GET /css/styles.css HTTP/1.1" 200 -
+2025-05-20 13:20:43,379 - INFO - 172.18.0.1 - - [20/May/2025 13:20:43] "GET /js/analysis.js HTTP/1.1" 200 -
+2025-05-20 13:20:45,315 - INFO - 172.18.0.1 - - [20/May/2025 13:20:45] "GET / HTTP/1.1" 200 -
+2025-05-20 13:20:45,442 - INFO - 172.18.0.1 - - [20/May/2025 13:20:45] "[33mGET /static/css/style.css HTTP/1.1[0m" 404 -
+2025-05-20 13:20:45,461 - INFO - 172.18.0.1 - - [20/May/2025 13:20:45] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:45,472 - INFO - 172.18.0.1 - - [20/May/2025 13:20:45] "[33mGET /static/css/dashboard.css HTTP/1.1[0m" 404 -
+2025-05-20 13:20:45,474 - INFO - 172.18.0.1 - - [20/May/2025 13:20:45] "[33mGET /static/js/main.js HTTP/1.1[0m" 404 -
+2025-05-20 13:20:45,599 - INFO - 172.18.0.1 - - [20/May/2025 13:20:45] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:22:34,133 - INFO - 172.18.0.1 - - [20/May/2025 13:22:34] "GET / HTTP/1.1" 200 -
+2025-05-20 13:22:34,555 - INFO - 172.18.0.1 - - [20/May/2025 13:22:34] "[33mGET /static/css/styles.css HTTP/1.1[0m" 404 -
+2025-05-20 13:22:34,557 - INFO - 172.18.0.1 - - [20/May/2025 13:22:34] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:22:34,558 - INFO - 172.18.0.1 - - [20/May/2025 13:22:34] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:22:34,559 - INFO - 172.18.0.1 - - [20/May/2025 13:22:34] "[33mGET /static/css/dashboard.css HTTP/1.1[0m" 404 -
+2025-05-20 13:22:34,608 - INFO - 172.18.0.1 - - [20/May/2025 13:22:34] "[33mGET /static/js/main.js HTTP/1.1[0m" 404 -
+2025-05-20 13:22:37,116 - INFO - 172.18.0.1 - - [20/May/2025 13:22:37] "GET / HTTP/1.1" 200 -
+2025-05-20 13:22:37,228 - INFO - 172.18.0.1 - - [20/May/2025 13:22:37] "GET / HTTP/1.1" 200 -
+2025-05-20 13:22:37,317 - INFO - 172.18.0.1 - - [20/May/2025 13:22:37] "[33mGET /static/css/styles.css HTTP/1.1[0m" 404 -
+2025-05-20 13:22:37,337 - INFO - 172.18.0.1 - - [20/May/2025 13:22:37] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:22:37,339 - INFO - 172.18.0.1 - - [20/May/2025 13:22:37] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:22:37,340 - INFO - 172.18.0.1 - - [20/May/2025 13:22:37] "[33mGET /static/js/main.js HTTP/1.1[0m" 404 -
+2025-05-20 13:22:37,341 - INFO - 172.18.0.1 - - [20/May/2025 13:22:37] "[33mGET /static/css/dashboard.css HTTP/1.1[0m" 404 -
+2025-05-20 13:22:38,482 - INFO - 172.18.0.1 - - [20/May/2025 13:22:38] "GET /offline HTTP/1.1" 200 -
+2025-05-20 13:22:38,608 - INFO - 172.18.0.1 - - [20/May/2025 13:22:38] "[36mGET /css/styles.css HTTP/1.1[0m" 304 -
+2025-05-20 13:22:38,630 - INFO - 172.18.0.1 - - [20/May/2025 13:22:38] "[36mGET /js/analysis.js HTTP/1.1[0m" 304 -
+2025-05-20 13:25:28,678 - INFO -  * Detected change in '/app/app.py', reloading
+2025-05-20 13:25:28,808 - INFO -  * Restarting with stat
+2025-05-20 13:25:29,662 - WARNING -  * Debugger is active!
+2025-05-20 13:25:29,663 - INFO -  * Debugger PIN: 128-779-741
+2025-05-20 13:25:35,006 - INFO -  * Detected change in '/app/app.py', reloading
+2025-05-20 13:25:35,102 - INFO -  * Restarting with stat
+2025-05-20 13:25:35,974 - WARNING -  * Debugger is active!
+2025-05-20 13:25:35,976 - INFO -  * Debugger PIN: 128-779-741
+2025-05-20 13:26:00,192 - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-05-20 13:26:00,193 - INFO -  * Running on http://172.18.0.5:5000/ (Press CTRL+C to quit)
+2025-05-20 13:26:00,196 - INFO -  * Restarting with stat
+2025-05-20 13:26:00,757 - WARNING -  * Debugger is active!
+2025-05-20 13:26:00,758 - INFO -  * Debugger PIN: 368-412-420
+2025-05-20 13:26:13,296 - INFO - 172.18.0.1 - - [20/May/2025 13:26:13] "GET / HTTP/1.1" 200 -
+2025-05-20 13:26:13,307 - INFO - 172.18.0.1 - - [20/May/2025 13:26:13] "GET / HTTP/1.1" 200 -
+2025-05-20 13:26:13,476 - INFO - 172.18.0.1 - - [20/May/2025 13:26:13] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:26:13,477 - INFO - 172.18.0.1 - - [20/May/2025 13:26:13] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:26:13,490 - INFO - 172.18.0.1 - - [20/May/2025 13:26:13] "[33mGET /static/css/styles.css HTTP/1.1[0m" 404 -
+2025-05-20 13:26:13,525 - INFO - 172.18.0.1 - - [20/May/2025 13:26:13] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:26:13,588 - INFO - 172.18.0.1 - - [20/May/2025 13:26:13] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:26:13,599 - INFO - 172.18.0.1 - - [20/May/2025 13:26:13] "[33mGET /static/css/styles.css HTTP/1.1[0m" 404 -
+2025-05-20 13:27:41,486 - INFO -  * Detected change in '/app/app.py', reloading
+2025-05-20 13:27:41,695 - INFO -  * Restarting with stat
+2025-05-20 13:27:44,683 - WARNING -  * Debugger is active!
+2025-05-20 13:27:44,686 - INFO -  * Debugger PIN: 368-412-420
+2025-05-20 13:28:00,936 - INFO -  * Detected change in '/app/app.py', reloading
+2025-05-20 13:28:01,161 - INFO -  * Restarting with stat
+2025-05-20 13:28:03,483 - WARNING -  * Debugger is active!
+2025-05-20 13:28:03,485 - INFO -  * Debugger PIN: 368-412-420
+2025-05-20 13:30:18,196 - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-05-20 13:30:18,209 - INFO -  * Running on http://172.18.0.5:5000/ (Press CTRL+C to quit)
+2025-05-20 13:30:18,241 - INFO -  * Restarting with stat
+2025-05-20 13:30:20,738 - WARNING -  * Debugger is active!
+2025-05-20 13:30:20,740 - INFO -  * Debugger PIN: 792-104-701
+2025-05-20 13:31:17,420 - INFO - 172.18.0.1 - - [20/May/2025 13:31:17] "GET / HTTP/1.1" 200 -
+2025-05-20 13:31:17,724 - INFO - 172.18.0.1 - - [20/May/2025 13:31:17] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:31:17,865 - INFO - 172.18.0.1 - - [20/May/2025 13:31:17] "[33mGET /static/css/styles.css HTTP/1.1[0m" 404 -
+2025-05-20 13:31:17,869 - INFO - 172.18.0.1 - - [20/May/2025 13:31:17] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:31:33,376 - INFO - 172.18.0.1 - - [20/May/2025 13:31:33] "[33mGET /online HTTP/1.1[0m" 404 -
+2025-05-20 13:41:29,196 - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-05-20 13:41:29,198 - INFO -  * Running on http://172.18.0.7:5000/ (Press CTRL+C to quit)
+2025-05-20 13:41:29,225 - INFO -  * Restarting with stat
+2025-05-20 13:41:31,203 - WARNING -  * Debugger is active!
+2025-05-20 13:41:31,206 - INFO -  * Debugger PIN: 364-450-799
+2025-05-20 13:44:31,673 - INFO - 172.18.0.1 - - [20/May/2025 13:44:31] "GET / HTTP/1.1" 200 -
+2025-05-20 13:44:32,275 - INFO - 172.18.0.1 - - [20/May/2025 13:44:32] "GET / HTTP/1.1" 200 -
+2025-05-20 13:44:32,877 - INFO - 172.18.0.1 - - [20/May/2025 13:44:32] "[33mGET /static/css/styles.css HTTP/1.1[0m" 404 -
+2025-05-20 13:44:32,878 - INFO - 172.18.0.1 - - [20/May/2025 13:44:32] "[33mGET /static/js/dashboard.js HTTP/1.1[0m" 404 -
+2025-05-20 13:44:32,949 - INFO - 172.18.0.1 - - [20/May/2025 13:44:32] "[33mGET /static/js/charts.js HTTP/1.1[0m" 404 -
+2025-05-20 13:53:33,352 - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-05-20 13:53:33,353 - INFO -  * Running on http://172.18.0.7:5000/ (Press CTRL+C to quit)
+2025-05-20 13:53:33,359 - INFO -  * Restarting with stat
+2025-05-20 13:53:36,296 - WARNING -  * Debugger is active!
+2025-05-20 13:53:36,310 - INFO -  * Debugger PIN: 525-825-936
+2025-05-20 13:58:41,000 - INFO -  * Detected change in '/app/app.py', reloading
+2025-05-20 13:58:41,299 - INFO -  * Restarting with stat
