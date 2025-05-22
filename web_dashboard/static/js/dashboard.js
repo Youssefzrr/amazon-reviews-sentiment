@@ -156,59 +156,27 @@ function renderReviews(containerId, data) {
 
 function fetchRealtime() {
     fetch('/api/realtime').then(r => r.json()).then(data => {
-        renderReviews('#realtime-container', data);
+        createSentimentTimeChart(data.minute_sentiment, 'rt-sentiment-time-chart', 'Minute');
+        renderReviews('#realtime-container', data.recent_reviews);
     });
-}
-
-let sentimentChart, sentimentTimeChart;
-function renderOfflineDashboard(data) {
-    document.getElementById('total-reviews').textContent = data.total_reviews;
-    document.getElementById('avg-confidence').textContent = (data.avg_confidence * 100).toFixed(2) + '%';
-    document.getElementById('avg-rating').textContent = data.avg_rating.toFixed(2);
-    const ctx = document.getElementById('sentiment-chart').getContext('2d');
-    if (sentimentChart) sentimentChart.destroy();
-    sentimentChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Positive', 'Neutral', 'Negative'],
-            datasets: [{
-                data: [data.positive_count, data.neutral_count, data.negative_count],
-                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
-            }]
-        },
-        options: {
-            plugins: { legend: { display: true } }
-        }
-    });
-    const timeLabels = Object.keys(data.hourly_sentiment).sort();
-    const positiveData = timeLabels.map(l => data.hourly_sentiment[l].positive);
-    const neutralData = timeLabels.map(l => data.hourly_sentiment[l].neutral);
-    const negativeData = timeLabels.map(l => data.hourly_sentiment[l].negative);
-    const ctxTime = document.getElementById('sentiment-time-chart').getContext('2d');
-    if (sentimentTimeChart) sentimentTimeChart.destroy();
-    sentimentTimeChart = new Chart(ctxTime, {
-        type: 'line',
-        data: {
-            labels: timeLabels,
-            datasets: [
-                { label: 'Positive', data: positiveData, borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', fill: true },
-                { label: 'Neutral', data: neutralData, borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.1)', fill: true },
-                { label: 'Negative', data: negativeData, borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.1)', fill: true }
-            ]
-        },
-        options: {
-            scales: {
-                x: { title: { display: true, text: 'Hour' } },
-                y: { title: { display: true, text: 'Count' }, beginAtZero: true }
-            }
-        }
-    });
-    renderReviews('#offline-container', data.recent_reviews);
 }
 
 function fetchOffline() {
     fetch('/api/offline').then(r => r.json()).then(data => {
-        renderOfflineDashboard(data);
+        document.getElementById('total-reviews').textContent = data.total_reviews;
+        document.getElementById('avg-confidence').textContent = (data.avg_confidence * 100).toFixed(2) + '%';
+        document.getElementById('avg-rating').textContent = data.avg_rating.toFixed(2);
+        createSentimentDoughnutChart({
+            positive: data.positive_count,
+            neutral: data.neutral_count,
+            negative: data.negative_count
+        }, 'sentiment-chart');
+        createSentimentTimeChart(data.sentiment_time, 'sentiment-time-chart', 'Date');
+        createSentimentBarChart(data.sentiment_rating, 'sentiment-rating-chart', 'Rating');
+        createSentimentBarChart(data.sentiment_product, 'sentiment-product-chart', 'Product');
+        createSentimentBarChart(data.sentiment_reviewer, 'sentiment-reviewer-chart', 'Reviewer');
+        createSentimentBarChart(data.sentiment_length, 'sentiment-length-chart', 'Review Length');
+        renderReviews('#offline-container', data.recent_reviews);
     });
 }
 

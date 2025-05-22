@@ -10,175 +10,168 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
-            <span class="navbar-brand mb-0 h1">Amazon Reviews Sentiment Analysis</span>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        <div class="row">
+    <div class="dashboard-container d-flex">
+        <!-- Sidebar -->
+        <nav class="sidebar enhanced-sidebar bg-dark text-white p-3">
+            <h4 class="mb-4">Dashboard</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-white active" id="nav-realtime" href="#">Real-time Analytics</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-white" id="nav-offline" href="#">Offline Analytics</a>
+                </li>
+            </ul>
+            <div class="sidebar-widget mt-5 p-3 rounded">
+                <div class="text-center">
+                    <span class="fw-bold">Welcome!</span>
+                    <div style="font-size:0.95em;">Amazon Reviews Sentiment</div>
+                </div>
+            </div>
+        </nav>
+        <!-- Main Content -->
+        <div class="main-content flex-grow-1 p-4">
             <!-- Real-time Section -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Real-time Predictions</h5>
+            <div id="section-realtime">
+                <h2 class="mb-4">Real-time Analytics</h2>
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Sentiment Over Time (Last Hour)</h6>
+                                <canvas id="rt-sentiment-time-chart"></canvas>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div id="realtime-container" class="review-container">
-                            <!-- Real-time reviews will be inserted here -->
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Recent Real-time Reviews</h6>
+                                <div id="realtime-container" class="review-container"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Offline Analysis Section -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Offline Analysis</h5>
+            <!-- Offline Section -->
+            <div id="section-offline" style="display:none;">
+                <h2 class="mb-4">Offline Analytics</h2>
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-light text-center mb-3">
+                            <div class="card-body">
+                                <h6>Total Reviews</h6>
+                                <h3 id="total-reviews">0</h3>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <!-- Statistics Cards -->
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="card bg-light">
-                                    <div class="card-body text-center">
-                                        <h6>Total Reviews</h6>
-                                        <h3 id="total-reviews">0</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card bg-light">
-                                    <div class="card-body text-center">
-                                        <h6>Average Confidence</h6>
-                                        <h3 id="avg-confidence">0%</h3>
-                                    </div>
-                                </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light text-center mb-3">
+                            <div class="card-body">
+                                <h6>Average Confidence</h6>
+                                <h3 id="avg-confidence">0%</h3>
                             </div>
                         </div>
-
-                        <!-- Sentiment Distribution Chart -->
-                        <div class="mb-4">
-                            <canvas id="sentiment-chart"></canvas>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light text-center mb-3">
+                            <div class="card-body">
+                                <h6>Average Rating</h6>
+                                <h3 id="avg-rating">0</h3>
+                            </div>
                         </div>
-
-                        <!-- Sentiment Over Time Chart -->
-                        <div class="mb-4">
-                            <canvas id="sentiment-time-chart"></canvas>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light text-center mb-3">
+                            <div class="card-body">
+                                <h6>Sentiment Distribution</h6>
+                                <canvas id="sentiment-chart"></canvas>
+                            </div>
                         </div>
-
-                        <!-- Recent Reviews -->
-                        <h6>Recent Reviews</h6>
-                        <div id="offline-container" class="review-container">
-                            <!-- Recent reviews will be inserted here -->
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Sentiment Over Time (by reviewTime)</h6>
+                                <canvas id="sentiment-time-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Sentiment by Rating</h6>
+                                <canvas id="sentiment-rating-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Sentiment by Product</h6>
+                                <canvas id="sentiment-product-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Sentiment by Reviewer</h6>
+                                <canvas id="sentiment-reviewer-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Sentiment by Review Length</h6>
+                                <canvas id="sentiment-length-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Recent Offline Reviews</h6>
+                                <div id="offline-container" class="review-container"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
     <script>
-        function sentimentIcon(sentiment) {
-            if (sentiment === 'positive') return '<i class="fa-solid fa-face-smile text-success"></i>';
-            if (sentiment === 'neutral') return '<i class="fa-solid fa-face-meh text-warning"></i>';
-            if (sentiment === 'negative') return '<i class="fa-solid fa-face-frown text-danger"></i>';
-            return '<i class="fa-solid fa-question text-secondary"></i>';
-        }
-        function sentimentLabel(sentiment) {
-            if (sentiment === 'positive') return 'Positive';
-            if (sentiment === 'neutral') return 'Neutral';
-            if (sentiment === 'negative') return 'Negative';
-            return 'Unknown';
-        }
-        function renderReviews(containerId, data) {
-            const container = $(containerId);
-            container.empty();
-            if (data.length === 0) {
-                container.append('<p class="text-muted">No reviews available.</p>');
-                return;
-            }
-            data.forEach(review => {
-                container.append(`
-                    <div class="mb-3 p-3 border rounded review-block">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>${sentimentIcon(review.sentiment)} <strong>Sentiment:</strong> ${sentimentLabel(review.sentiment)}</span>
-                            <span class="badge bg-secondary">${new Date(review.timestamp).toLocaleString()}</span>
-                        </div>
-                        <div class="mb-2"><strong>Confidence:</strong> ${(review.confidence * 100).toFixed(2)}%</div>
-                        <div class="mb-2"><strong>Product:</strong> ${review.product_id || 'N/A'}</div>
-                        <div class="mb-2"><strong>Reviewer:</strong> ${review.reviewer || 'N/A'}</div>
-                        <div class="mb-2"><strong>Summary:</strong> ${review.summary || 'N/A'}</div>
-                        <div class="mb-2"><strong>Rating:</strong> ${review.rating || 'N/A'}</div>
-                        <div class="review-text">${review.review_text}</div>
-                    </div>
-                `);
-            });
-        }
-        function fetchRealtime() {
-            $.getJSON('/api/realtime', function(data) {
-                renderReviews('#realtime-container', data);
-            });
-        }
-        let sentimentChart, sentimentTimeChart;
-        function renderOfflineDashboard(data) {
-            $('#total-reviews').text(data.total_reviews);
-            $('#avg-confidence').text((data.avg_confidence * 100).toFixed(2) + '%');
-            $('#avg-rating').text(data.avg_rating.toFixed(2));
-            const ctx = document.getElementById('sentiment-chart').getContext('2d');
-            if (sentimentChart) sentimentChart.destroy();
-            sentimentChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Positive', 'Neutral', 'Negative'],
-                    datasets: [{
-                        data: [data.positive_count, data.neutral_count, data.negative_count],
-                        backgroundColor: ['#28a745', '#ffc107', '#dc3545']
-                    }]
-                },
-                options: {
-                    plugins: { legend: { display: true } }
-                }
-            });
-            const timeLabels = Object.keys(data.hourly_sentiment).sort();
-            const positiveData = timeLabels.map(l => data.hourly_sentiment[l].positive);
-            const neutralData = timeLabels.map(l => data.hourly_sentiment[l].neutral);
-            const negativeData = timeLabels.map(l => data.hourly_sentiment[l].negative);
-            const ctxTime = document.getElementById('sentiment-time-chart').getContext('2d');
-            if (sentimentTimeChart) sentimentTimeChart.destroy();
-            sentimentTimeChart = new Chart(ctxTime, {
-                type: 'line',
-                data: {
-                    labels: timeLabels,
-                    datasets: [
-                        { label: 'Positive', data: positiveData, borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', fill: true },
-                        { label: 'Neutral', data: neutralData, borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.1)', fill: true },
-                        { label: 'Negative', data: negativeData, borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.1)', fill: true }
-                    ]
-                },
-                options: {
-                    scales: {
-                        x: { title: { display: true, text: 'Hour' } },
-                        y: { title: { display: true, text: 'Count' }, beginAtZero: true }
-                    }
-                }
-            });
-            renderReviews('#offline-container', data.recent_reviews);
-        }
-        function fetchOffline() {
-            $.getJSON('/api/offline', function(data) {
-                renderOfflineDashboard(data);
-            });
-        }
+        // Sidebar navigation logic
         $(document).ready(function() {
-            fetchRealtime();
-            fetchOffline();
-            setInterval(fetchRealtime, 5000);
-            setInterval(fetchOffline, 10000);
+            $('#nav-realtime').on('click', function(e) {
+                e.preventDefault();
+                $('#section-realtime').show();
+                $('#section-offline').hide();
+                $('#nav-realtime').addClass('active');
+                $('#nav-offline').removeClass('active');
+            });
+            $('#nav-offline').on('click', function(e) {
+                e.preventDefault();
+                $('#section-realtime').hide();
+                $('#section-offline').show();
+                $('#nav-realtime').removeClass('active');
+                $('#nav-offline').addClass('active');
+            });
         });
     </script>
 </body>

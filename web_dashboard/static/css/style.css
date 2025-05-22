@@ -1,12 +1,48 @@
 body {
     background: #f8f9fa;
 }
-.sidebar {
+.dashboard-container {
     min-height: 100vh;
-    border-right: 1px solid #dee2e6;
+    display: flex;
 }
-.content-section {
-    padding-top: 30px;
+.sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: #212529;
+    color: #fff;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+}
+.sidebar h4 {
+    color: #fff;
+    font-weight: 700;
+}
+.sidebar .nav-link {
+    color: #b3b8e0;
+    font-size: 1.1em;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+    padding-left: 1.2rem;
+}
+.sidebar .nav-link.active, .sidebar .nav-link:hover {
+    background: #3949ab;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(57,73,171,0.10);
+}
+.main-content {
+    margin-left: 240px;
+    width: 100%;
+    padding: 2rem 2rem 2rem 2rem;
+}
+.card-title {
+    font-weight: 600;
+}
+.card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 .review-container {
     max-height: 400px;
@@ -21,10 +57,32 @@ body {
 .review-block .fa-face-smile { color: #28a745; }
 .review-block .fa-face-meh { color: #ffc107; }
 .review-block .fa-face-frown { color: #dc3545; }
-.card-title {
-    font-weight: 600;
-}
 .review-text {
     font-size: 1.05em;
     color: #333;
+}
+.card-body canvas {
+    height: 250px !important;
+    max-height: 300px;
+    min-height: 200px;
+    width: 100% !important;
+    display: block;
+    margin: 0 auto;
+}
+.card-body {
+    max-height: 350px;
+    overflow: hidden;
+}
+.enhanced-sidebar {
+    background: linear-gradient(180deg, #1a237e 0%, #283593 100%) !important;
+    color: #fff;
+    border-right: none;
+    box-shadow: 2px 0 8px rgba(26,35,126,0.08);
+}
+
+.sidebar-widget {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 1.05em;
+    box-shadow: 0 2px 8px rgba(26,35,126,0.08);
 } 
