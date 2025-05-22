@@ -123,11 +123,11 @@ class ReviewProcessor:
             
             # Map prediction to sentiment label
             if pred_value == 0:
-                sentiment_label = "negative"
+                sentiment_label = "positive"
             elif pred_value == 1:
                 sentiment_label = "neutral"
             elif pred_value == 2:
-                sentiment_label = "positive"
+                sentiment_label = "negative"
             else:
                 sentiment_label = "unknown"
                 logger.warning(f"Unexpected prediction value: {pred_value}")
